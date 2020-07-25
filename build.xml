@@ -1,0 +1,47 @@
+<project name="MJCompiler" basedir=".">
+    <target name="parser-gen">
+        <delete file="src/rs/ac/bg/etf/pp1/sym.java" />
+        <delete file="src/rs/ac/bg/etf/pp1/Yylex.java" />
+        <delete file="src/rs/ac/bg/etf/pp1/MJParser.java" />
+        <delete dir="src/rs/ac/bg/etf/pp1/ast"/>
+        <java jar="lib/JFlex.jar" fork="true">
+            <arg value="-d"/>
+            <arg value="src/rs/ac/bg/etf/pp1"/>
+            <arg value="spec/mjlexer.flex"/>
+        </java>
+        <java jar="lib/cup_v10k.jar" fork="true">
+            <arg value="-destdir" />
+            <arg value="src/rs/ac/bg/etf/pp1" />
+            <arg value="-ast" />
+            <arg value="src.rs.ac.bg.etf.pp1.ast" />
+            <arg value="-parser" />
+            <arg value="MJParser" />
+            <arg value="-dump_states" />
+            <arg value="-buildtree" />
+            <arg value="spec/mjparser.cup" />
+        </java>
+
+    </target>
+
+    <target name="repackage" depends="parser-gen">
+        <replace dir="src" value="rs.ac.bg.etf.pp1.ast" token="src.rs.ac.bg.etf.pp1.ast" summary="true" />
+    </target>
+
+    <target name="disasm">
+        <java classname="rs.etf.pp1.mj.runtime.disasm">
+            <arg value="test/program.obj"/>
+            <classpath>
+                <pathelement location="lib/mj-runtime.jar"/>
+            </classpath>
+        </java>
+    </target>
+
+    <target name="runObj" depends="disasm">
+        <java classname="rs.etf.pp1.mj.runtime.Run">
+            <arg value="test/program.obj"/>
+            <classpath>
+                <pathelement location="lib/mj-runtime.jar"/>
+            </classpath>
+        </java>
+    </target>
+</project>

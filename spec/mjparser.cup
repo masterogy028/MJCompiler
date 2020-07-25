@@ -1,0 +1,262 @@
+package rs.ac.bg.etf.pp1;
+
+import java_cup.runtime.*;
+import org.apache.log4j.*;
+
+// import java.io.*;
+import rs.ac.bg.etf.pp1.ast.*;
+
+
+parser code {:
+	
+	boolean errorDetected = false;
+	
+	Logger log = Logger.getLogger(getClass());
+   
+   
+    // slede redefinisani metodi za prijavu gresaka radi izmene teksta poruke
+     
+    public void report_fatal_error(String message, Object info) throws java.lang.Exception {
+      done_parsing();
+      report_error(message, info);
+    }
+  
+    public void syntax_error(Symbol cur_token) {
+        report_error("\nSintaksna greska", cur_token);
+    }
+  
+    public void unrecovered_syntax_error(Symbol cur_token) throws java.lang.Exception {
+        report_fatal_error("Fatalna greska, parsiranje se ne moze nastaviti", cur_token);
+    }
+
+    public void report_error(String message, Object info) {
+    	errorDetected = true;
+    	StringBuilder msg = new StringBuilder(message); 
+    	if (info instanceof Symbol)
+            msg.append (" na liniji ").append(((Symbol)info).left);
+        log.error(msg.toString());
+    }
+    
+    public void report_info(String message, Object info) {
+    	StringBuilder msg = new StringBuilder(message); 
+    	if (info instanceof Symbol)
+            msg.append (" na liniji ").append(((Symbol)info).left);
+        log.info(msg.toString());
+    }
+    
+:}
+
+scan with {:
+	Symbol s = this.getScanner().next_token();
+	if (s != null && s.value != null) 
+		log.info(s.toString() + " " + s.value.toString());
+	return s;
+:}
+
+
+terminal PROG, LBRACE, RBRACE, SEMI, LPAREN, RPAREN, COMMA, PRINT, RETURN, PLUS, VOID;
+terminal NULL, MULTIPLY, EXTENDS, SUB, EQUAL, NOTEQUAL, GTEQUAL, LEEQUAL, LESS, GREATER, MOD;
+terminal MINUS, DIVIDE, IMPLEMENTS, CLASS, INTERFACE, OR, AND, DIVEQ, SUBEQ, ADDEQ, MULEQ;
+terminal ENUM, EQUALS, INCREMENT, DECREMENT, READ, LBRACKET, RBRACKET, CONST, DOT, MODEQ, NEW;
+terminal Integer INT ;
+terminal Boolean BOOL;
+terminal Character CHAR;
+terminal String IDENT ;
+terminal IF, ELSE;
+
+nonterminal MethodDeclList, LParenCondition, VarDecl, ConstDecl, WAss, IncDec, EqualOp, BoolOp, Void, VarDeclSpec, VarSingleSpec, ConstType;
+nonterminal FormalParamList, FormalParamDecl, FormPars, ActualPars, ActualParamList, VarType, ConstDeclSpec;
+nonterminal StatementList, Statement, AddOperations, MulOperations, MethVarDeclList;
+
+nonterminal rs.etf.pp1.symboltable.concepts.Obj ExprNeg,Program, ProgName, Designator, MethodDecl, MethodTypeName, MethType, ConstFactor, ConstSingleSpec;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj Type, Term, Expr, Factor, VarDeclList, DesignatorLbrack;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj Type, Term, Expr, Factor, VarDeclList, DesignatorLbrack;
+Program ::= (Program) PROG ProgName:p VarDeclList LBRACE MethodDeclList RBRACE
+;
+
+ProgName ::= (ProgName) IDENT:pName 
+;
+
+VarDeclList ::= (VarDeclarations) VarDeclList VarDecl  
+				|
+				(ConstDeclNode) VarDeclList ConstDecl
+				|
+				(NoVarDecl)/* epsilon */
+
+				;
+
+VarDecl ::= (VarDecl) VarType VarDeclSpec SEMI
+            ;
+VarType ::= (VarTypeNode) Type:varType;
+VarDeclSpec ::= (SingleVarNode)VarSingleSpec
+                |
+                (MultiVarNode)VarDeclSpec COMMA VarSingleSpec;
+
+VarSingleSpec ::= (SingleSpecNode) IDENT:varName WAss;
+
+WAss ::= (NoAssNode)
+            | (AssNode) EQUALS Factor
+            | (ArrayDeclNode) LBRACKET RBRACKET
+            | (AssNodeError) EQUALS error {:parser.log.debug("Uspesan oporavak od greske pri deklaraciji sa dodelom.");:}
+            | (ArrayDeclNodeErr) LBRACKET error {:parser.log.debug("Uspesan oporavak od greske pri deklaraciji niza.");:}
+            ;
+
+ConstDecl ::= (ConstDecl) CONST ConstType:varType ConstDeclSpec SEMI
+            ;
+ConstType ::= (ConstTypeNode) Type:varType;
+
+ConstDeclSpec ::= (SingleConstNode) ConstSingleSpec
+                |
+                (MultiConstNode) ConstDeclSpec COMMA ConstSingleSpec;
+
+ConstSingleSpec ::= (ConstSingleSpecNode) IDENT:constName EQUALS ConstFactor;
+
+//VarType ::= (VarType) Type:varType
+//            |
+//            (VarConstType) CONST Type:varType
+//;
+
+
+
+MethodDeclList ::= (MethodDeclarations) MethodDeclList MethodDecl
+					|
+					(NoMethodDecl)/* epsilon */
+					;
+
+MethodDecl ::= (MethodDecl) MethodTypeName
+			   LPAREN FormPars RPAREN MethVarDeclList LBRACE StatementList RBRACE
+			   ;
+
+MethodTypeName ::= (MethodTypeNameNode) MethType:retType IDENT:methName
+
+;
+
+MethVarDeclList ::= (MethVarDeclarations) MethVarDeclList VarDecl
+				|
+				(MethConstDeclNode) MethVarDeclList ConstDecl
+				|
+				(MethNoVarDecl)/* epsilon */
+				;
+
+MethType ::= (MethTypeNode) Type:typeName
+        |
+        (VoidNode) VOID
+;
+Type ::= (Type) IDENT:typeName ;
+
+FormPars ::= (FormParams) FormalParamList | (NoFormParam) /* epsilon */ ;
+
+FormalParamList ::= (FormalParamDecls) FormalParamList COMMA FormalParamDecl
+					|
+					(SingleFormalParamDecl) FormalParamDecl
+					;
+					
+FormalParamDecl ::= (FormalParamDecl) Type IDENT ;
+
+StatementList ::= (Statements) StatementList Statement 
+					|
+				  (NoStmt) /* epsilon */
+				  ;
+Statement ::= (Assignment) Designator:dest EqualOp ExprNeg:e SEMI
+			  |
+			  (ErrAssignment)  error SEMI
+			  {: parser.log.debug("Uspesan oporavak od greske."); :}
+			  |
+			  (PrintStmt) PRINT LPAREN Expr RPAREN SEMI
+			  |
+              (ReadStmt) READ LPAREN Designator RPAREN SEMI
+			  |
+			  (ReturnExpr) RETURN Expr:t SEMI
+			  |
+			  (ReturnNoExpr) RETURN SEMI
+			  |
+              (BlockNode) LBRACE StatementList RBRACE
+			  |
+			  (ProcCall) Designator:func LPAREN ActualPars RPAREN S EMI
+			  |
+			  (IncrementOnlyNode) Designator:inc INCREMENT SEMI
+			  |
+			  (DecrementOnlyNode) Designator:dec DECREMENT SEMI
+              |
+              (DeclNodeStmt) VarDecl
+              ;
+
+ExprNeg ::= (RegularExp) Expr:te
+         |
+         (NegativeExp) MINUS Expr:te
+         ;
+Expr ::= (OppExpr) Expr:te AddOperations Term:t
+		 |
+		 (EqExpr) Expr:te EqualOp Term:t
+         |
+         (BoolExpr) Expr:te BoolOp Term:t
+         |
+		 (TermExpr) Term:t
+		 ;
+
+Term ::= (TermMulopNode) Term MulOperations Factor:t | (TermNode) Factor:t
+;
+
+Factor ::= (ConstFactorNode) ConstFactor
+			|
+		   (Var) Designator:d IncDec
+		    |
+		   (ParenExpFactorNode) LPAREN Expr:e RPAREN
+		    |
+		   (FuncCall) Designator:func LPAREN ActualPars RPAREN
+		    |
+		   (NewArrayNode) NEW Type:t LBRACKET Expr:e RBRACKET
+		   ;
+
+ConstFactor ::= (ConstInt) INT:value
+                |
+                (ConstChar) CHAR:value
+                |
+                (ConstBool) BOOL:value;
+
+IncDec ::= (IncNode) INCREMENT
+            |
+            (DecNode) DECREMENT
+            |
+            (NothNode) /* epsilon */
+;
+ActualPars ::= (Actuals) ActualParamList 
+				| 
+			   (NoActuals) /* epsilon */ 
+			   ;
+			   
+ActualParamList ::= (ActualParams) ActualParamList COMMA Expr
+					|
+					(ActualParam) Expr
+					;
+
+Designator ::= (DesignatorNode) IDENT:name
+        |
+        (DesignatorArrayMemberNode) DesignatorLbrack Expr RBRACKET
+;
+
+DesignatorLbrack ::= (DesignatorLbrackNode) IDENT:name LBRACKET;
+
+AddOperations ::=
+                 (Addop) PLUS
+                |(Subop) MINUS
+                ;
+MulOperations ::=
+                (Mulop) MULTIPLY
+              | (Divop) DIVIDE
+              | (Modop) MOD
+              ;
+
+EqualOp ::= (EqualNode) EQUALS
+            |(AddEq) ADDEQ
+            |(SubEq) SUBEQ
+            |(MulEq) MULEQ
+            |(DivEq) DIVEQ
+            ;
+BoolOp ::=  (EqualBool) EQUAL
+            |(GteEq) GTEQUAL
+            |(Greater) GREATER
+            |(Less) LESS
+            |(LeEq) LEEQUAL
+            |(NotEq) NOTEQUAL
+            ;
