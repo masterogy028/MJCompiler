@@ -91,7 +91,7 @@ nonterminal MethVarDeclList MethVarDeclList;
 
 nonterminal rs.etf.pp1.symboltable.concepts.Obj ExprNeg,Program, ProgName, Designator, MethodDecl, MethodTypeName, MethType, ConstFactor, ConstSingleSpec;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj Type, Term, Expr, Factor, VarDeclList, DesignatorLbrack;
-Program ::= (Program) PROG ProgName:p VarDeclList:V1 LBRACE MethodDeclList:M2 RBRACE {: RESULT=new Program(p, V1, M2); RESULT.setLine(pleft); :} 
+Program ::= (Program) PROG ProgName:p VarDeclList:V1 LBRACE MethodDeclList:M2 RBRACE {: RESULT=new Program(p, V1, M2); RESULT.setLine(pleft); :}
 ;
 
 ProgName ::= (ProgName) IDENT:pName {: RESULT=new ProgName(pName); RESULT.setLine(pNameleft); :} 

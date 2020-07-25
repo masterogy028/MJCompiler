@@ -70,7 +70,6 @@ nonterminal StatementList, Statement, AddOperations, MulOperations, MethVarDeclL
 
 nonterminal rs.etf.pp1.symboltable.concepts.Obj ExprNeg,Program, ProgName, Designator, MethodDecl, MethodTypeName, MethType, ConstFactor, ConstSingleSpec;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj Type, Term, Expr, Factor, VarDeclList, DesignatorLbrack;
-nonterminal rs.etf.pp1.symboltable.concepts.Obj Type, Term, Expr, Factor, VarDeclList, DesignatorLbrack;
 Program ::= (Program) PROG ProgName:p VarDeclList LBRACE MethodDeclList RBRACE
 ;
 
@@ -172,7 +171,7 @@ Statement ::= (Assignment) Designator:dest EqualOp ExprNeg:e SEMI
 			  |
               (BlockNode) LBRACE StatementList RBRACE
 			  |
-			  (ProcCall) Designator:func LPAREN ActualPars RPAREN S EMI
+			  (ProcCall) Designator:func LPAREN ActualPars RPAREN SEMI
 			  |
 			  (IncrementOnlyNode) Designator:inc INCREMENT SEMI
 			  |
