@@ -161,11 +161,11 @@ Statement ::= (Assignment) Designator:dest EqualOp ExprNeg:e SEMI
 			  (ErrAssignment)  error SEMI
 			  {: parser.log.debug("Uspesan oporavak od greske."); :}
 			  |
-			  (PrintStmt) PRINT LPAREN Expr RPAREN SEMI
+			  (PrintStmt) PRINT LPAREN ExprNeg RPAREN SEMI
 			  |
               (ReadStmt) READ LPAREN Designator RPAREN SEMI
 			  |
-			  (ReturnExpr) RETURN Expr:t SEMI
+			  (ReturnExpr) RETURN ExprNeg:t SEMI
 			  |
 			  (ReturnNoExpr) RETURN SEMI
 			  |
@@ -184,11 +184,11 @@ ExprNeg ::= (RegularExp) Expr:te
          |
          (NegativeExp) MINUS Expr:te
          ;
-Expr ::= (OppExpr) Expr:te AddOperations Term:t
+Expr ::= (OppExpr) Term:t AddOperations  Expr:te
 		 |
-		 (EqExpr) Expr:te EqualOp Term:t
+		 (EqExpr) Term:t EqualOp Expr:te
          |
-         (BoolExpr) Expr:te BoolOp Term:t
+         (BoolExpr) Term:t  BoolOp Expr:te
          |
 		 (TermExpr) Term:t
 		 ;

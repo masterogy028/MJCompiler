@@ -1,15 +1,20 @@
-// Test301
-
 program test301
-int niz[];
+ int niz[];
 {
-	void main()
-
-	{
-        niz=new int[4];
-        niz[0]=1;
-        niz[0] ++;
-        print(niz[0]);
-	}
-
+ void main()
+int x;
+int y;
+int z;
+ {
+    niz= new int[2];
+    niz[0]=1;
+    x = 1;
+    y=1;
+    z=1;
+    x -= y += niz[0] += niz[0];
+    print(x);
+    print(y);
+    print(niz[0]);
+    //niz[0] *= x-= 1;
+ }
 }

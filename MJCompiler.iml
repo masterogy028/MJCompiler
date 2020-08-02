@@ -70,5 +70,6 @@
       </library>
     </orderEntry>
     <orderEntry type="library" name="cup_v10k" level="project" />
+    <orderEntry type="library" name="mj-runtime-1.1" level="project" />
   </component>
 </module>

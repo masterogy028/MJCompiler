@@ -1,6 +1,5 @@
 package rs.ac.bg.etf.pp1;
 
-import javafx.fxml.Initializable;
 import rs.ac.bg.etf.pp1.CounterVisitor.FormParamCounter;
 import rs.ac.bg.etf.pp1.CounterVisitor.VarCounter;
 import rs.ac.bg.etf.pp1.ast.*;
@@ -12,15 +11,18 @@ import rs.etf.pp1.symboltable.concepts.Struct;
 
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.Stack;
 
 public class CodeGenerator extends VisitorAdaptor {
 
 	private int varCount;
-
+	private int depth=0;
+	private Stack<SyntaxNode> designatorStack = new Stack<>();
+	private Stack<SyntaxNode> operationStack = new Stack<>();
 	private int paramCnt;
-
+	private boolean EqOpp = false;
 	private int mainPc;
-
+	private SyntaxNode designatorToProcess = null;
 	public int getMainPc() {
 		return mainPc;
 	}
@@ -79,6 +81,7 @@ public class CodeGenerator extends VisitorAdaptor {
 		Obj con = Tab.insert(Obj.Con, "$", cn.obj.getType());
 		con.setLevel(0);
 		con.setAdr(cn.getValue());
+		//if(EqOpp)depth++;
 		Code.load(cn.obj);
 	}
 	@Override
@@ -100,18 +103,126 @@ public class CodeGenerator extends VisitorAdaptor {
 
 	@Override
 	public void visit(Assignment assignment) {
-
-		SyntaxNode parent = assignment.getDesignator().getParent();
-		Code.store(assignment.getDesignator().obj);
-
-//		if(assignment.getDesignator().obj.getType() == new Struct(Struct.Array, assignment.getDesignator().obj.getType().getElemType()));
-//			Code.load(assignment.getDesignator().obj);
-//		if(assignment.getDesignator().obj.getKind() == Obj.Elem) {
+		//designatorStack.add(assignment.getDesignator());
+		//designatorStack.add(assignment.getEqualOp());
+		if (!EqOpp)
+			Code.store(assignment.getDesignator().obj);
+		else {
+			if(assignment.getEqualOp() instanceof EqualNode)
+				Code.store(((Designator)designatorStack.pop()).obj);
+			if(assignment.getEqualOp() instanceof AddEq) {
+				Code.put(Code.add);
+				Code.put(Code.dup);
+				Code.store(((Designator)designatorStack.pop()).obj);
+			}
+			if(assignment.getEqualOp() instanceof SubEq) {
+				Code.put(Code.sub);
+				Code.put(Code.dup);
+				Code.store(((Designator)designatorStack.pop()).obj);
+			}
+			if(assignment.getEqualOp() instanceof MulEq) {
+				Code.put(Code.mul);
+				Code.put(Code.dup);
+				Code.store(((Designator)designatorStack.pop()).obj);
+			}
+			if(assignment.getEqualOp() instanceof DivEq) {
+				Code.put(Code.div);
+				Code.put(Code.dup);
+				Code.store(((Designator)designatorStack.pop()).obj);
+			}
+		}
 //
-//			String s = ((DesignatorArrayMemberNode)assignment.getDesignator()).getName();
-//			Obj o = Tab.find(s);
-//			Code.load(o);
+//		if(assignment.getEqualOp() instanceof EqualNode && designatorStack.size()==0) {
+//			SyntaxNode parent = assignment.getDesignator().getParent();
+//			Code.store(assignment.getDesignator().obj);
+//		} else if(assignment.getEqualOp() instanceof AddEq) {
+//			Code.load(((Designator)assignment.getDesignator()).obj);
+//			Code.put(Code.add);
+//			Code.store(((Designator)assignment.getDesignator()).obj);
 //		}
+//		else if(assignment.getEqualOp() instanceof MulEq) {
+//			Code.load(((Designator)assignment.getDesignator()).obj);
+//			Code.put(Code.mul);
+//			Code.store(((Designator)assignment.getDesignator()).obj);
+//		}
+//		else if(assignment.getEqualOp() instanceof DivEq) {
+//			Code.load(((Designator)assignment.getDesignator()).obj);
+//			Code.put(Code.div);
+//			Code.store(((Designator)assignment.getDesignator()).obj);
+//		}
+//		else if(assignment.getEqualOp() instanceof SubEq) {
+//			Code.load(((Designator)assignment.getDesignator()).obj);
+//			Code.put(Code.sub);
+//			Code.store(((Designator)assignment.getDesignator()).obj);
+//		}
+		if(EqOpp) Code.put(Code.pop);
+		EqOpp=false;
+		designatorToProcess=null;
+		designatorStack=new Stack<>();
+		operationStack=new Stack<>();
+		depth=0;
+	}
+
+
+
+	public void visit(Expr expr) {
+		if(expr instanceof EqExpr) EqOpp=true;
+	}
+
+	@Override
+	public void visit(EqExpr EqExpr) {
+		if(depth==designatorStack.size())designatorStack.pop();
+		designatorToProcess=designatorStack.pop();
+		if(EqExpr.getEqualOp() instanceof EqualNode) {
+		 	Code.store(((Designator)designatorToProcess).obj);
+			Code.load(((Designator)designatorToProcess).obj);
+		 } else if(EqExpr.getEqualOp() instanceof AddEq) {
+			if(((Designator)designatorToProcess).obj.getType().getKind()!=Struct.Array){
+				Code.put(Code.add);
+				Code.put(Code.dup);
+				Code.store(((Designator)designatorToProcess).obj);
+			}else {
+				Code.put(Code.add);
+				Code.put(Code.dup_x2);
+				Code.store(((Designator)designatorToProcess).obj);
+			}
+		 }
+		 else if(EqExpr.getEqualOp() instanceof MulEq) {
+			if(((Designator)designatorToProcess).obj.getType().getKind()!=Struct.Array){
+				 Code.put(Code.mul);
+				 Code.put(Code.dup);
+				 Code.store(((Designator)designatorToProcess).obj);
+			}
+			 else {
+				Code.put(Code.mul);
+				Code.put(Code.dup_x2);
+				Code.store(((Designator)designatorToProcess).obj);
+			}
+		 }
+		 else if(EqExpr.getEqualOp() instanceof DivEq) {
+			if(((Designator)designatorToProcess).obj.getType().getKind()!=Struct.Array){
+				Code.put(Code.div);
+				Code.put(Code.dup);
+				Code.store(((Designator)designatorToProcess).obj);
+			}
+			else {
+				Code.put(Code.div);
+				Code.put(Code.dup_x2);
+				Code.store(((Designator)designatorToProcess).obj);
+			}
+		 }
+		 else if(EqExpr.getEqualOp() instanceof SubEq) {
+			if(((Designator)designatorToProcess).obj.getType().getKind()!=Struct.Array){
+				Code.put(Code.sub);
+				Code.put(Code.dup);
+				Code.store(((Designator)designatorToProcess).obj);
+			}
+			else {
+				Code.put(Code.sub);
+				Code.put(Code.dup_x2);
+				Code.store(((Designator)designatorToProcess).obj);
+			}
+		 }
 	}
 
 	public void visit(NewArrayNode node)
@@ -132,21 +243,51 @@ public class CodeGenerator extends VisitorAdaptor {
 	@Override
 	public void visit(DesignatorNode designator) {
 		SyntaxNode parent = designator.getParent();
-		if (parent.getClass()!=Assignment.class && parent.getClass()!= FuncCall.class && parent.getClass()!=ProcCall.class)
+		checkIfEqOpp(designator, parent);
+		if (parent.getClass()!=Assignment.class && parent.getClass()!= FuncCall.class &&
+			parent.getClass()!=ProcCall.class
+			&& !EqOpp)
 			Code.load(designator.obj);
+		else if(EqOpp) {
+			depth++;
+			Code.load(designator.obj);
+			designatorStack.add(designator);
+
+			//designatorToProcess = designator;
+		}
 
 	}
+
+	private void checkIfEqOpp(Designator designator, SyntaxNode parent) {
+		if((parent.getParent().getParent() instanceof EqExpr) || (parent.getParent().getParent().getParent() instanceof EqExpr) ||
+				(parent.getParent().getParent().getParent().getParent() instanceof EqExpr) || (parent.getParent().getParent().getParent().getParent().getParent() instanceof EqExpr)
+		|| (parent instanceof Assignment && ((Assignment) parent).getEqualOp().getClass()!=EqualNode.class)) EqOpp=true;
+
+	}
+
 	@Override
 	public void visit(DesignatorArrayMemberNode designator) {
 		SyntaxNode parent = designator.getParent();
+		checkIfEqOpp(designator, parent);
+
 		if (parent.getClass()!=Assignment.class&&parent.getClass()!=IncrementOnlyNode.class&&
-				parent.getClass()!= DecrementOnlyNode.class && parent.getClass()!=ProcCall.class)
+				parent.getClass()!= DecrementOnlyNode.class && parent.getClass()!=ProcCall.class&& !EqOpp)
 			Code.load(designator.obj);
+		else if(EqOpp) {
+			depth++;
+			if(!(parent.getParent().getParent() instanceof TermExpr)&&!(parent.getParent().getParent().getParent() instanceof TermExpr))
+			Code.put(Code.dup2);
+			Code.load(designator.obj);
+			designatorStack.add(designator);
+		}
 	}
 	@Override
 	public void visit(DesignatorLbrackNode designator) {
 		SyntaxNode parent = designator.getParent();
+		checkIfEqOpp((DesignatorArrayMemberNode)designator.getParent(), parent);
 		Code.load(designator.obj);
+
+		//if(EqOpp) designatorToProcess = designator;
 	}
 	@Override
 	public void visit(FuncCall FuncCall) {
@@ -157,13 +298,18 @@ public class CodeGenerator extends VisitorAdaptor {
 	}
 
 	public void visit(PrintStmt printStmt){
-		if(printStmt.getExpr().obj.getType() == Tab.intType){
+		if(printStmt.getExprNeg().obj.getType() == Tab.intType){
 			Code.loadConst(5);
 			Code.put(Code.print);
 		}else{
 			Code.loadConst(1);
 			Code.put(Code.bprint);
 		}
+	}
+
+	@Override
+	public void visit(NegativeExp ExprNeg) {
+		Code.put(Code.neg);
 	}
 
 	@Override

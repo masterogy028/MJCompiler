@@ -203,7 +203,7 @@ public class SemanticPass extends VisitorAdaptor {
 			report_error("Greska na liniji " + returnExpr.getLine() + " : " + "funkcija je tipa void" + currentMethod.getName(), null);
 			return;
 		}
-		if (!currMethType.compatibleWith(returnExpr.getExpr().obj.getType())) {
+		if (!currMethType.compatibleWith(returnExpr.getExprNeg().obj.getType())) {
 			report_error("Greska na liniji " + returnExpr.getLine() + " : " + "tip izraza u return naredbi ne slaze se sa tipom povratne vrednosti funkcije " + currentMethod.getName(), null);
 		}			  	     	
 	}
@@ -231,11 +231,12 @@ public class SemanticPass extends VisitorAdaptor {
 		}     	
 	}
 	public void visit(RegularExp regExp) {
-		//report_info("current ", oppExpr);
 		regExp.obj=regExp.getExpr().obj;
 	}
 	public void visit(NegativeExp regExp) {
-		//report_info("current ", oppExpr);
+		if(regExp.getExpr().obj.getType()!=null && regExp.getExpr().obj.getType().getKind() != Struct.Int ) {
+			report_error("Greska na liniji "+ regExp.getLine()+" : nije moguca negacija tipa koji nije INT!", null);
+		}
 		regExp.obj=regExp.getExpr().obj;
 	}
 	public void visit(OppExpr oppExpr) {
