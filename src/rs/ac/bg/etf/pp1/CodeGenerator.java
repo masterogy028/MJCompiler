@@ -105,56 +105,61 @@ public class CodeGenerator extends VisitorAdaptor {
 	public void visit(Assignment assignment) {
 		//designatorStack.add(assignment.getDesignator());
 		//designatorStack.add(assignment.getEqualOp());
+
+
 		if (!EqOpp)
 			Code.store(assignment.getDesignator().obj);
 		else {
+			if(depth==designatorStack.size())designatorStack.pop();
+			designatorToProcess=designatorStack.pop();
 			if(assignment.getEqualOp() instanceof EqualNode)
-				Code.store(((Designator)designatorStack.pop()).obj);
+				Code.store(((Designator)designatorToProcess).obj); else
 			if(assignment.getEqualOp() instanceof AddEq) {
-				Code.put(Code.add);
-				Code.put(Code.dup);
-				Code.store(((Designator)designatorStack.pop()).obj);
-			}
+
+				if(((Designator)designatorToProcess).obj.getKind()!= Obj.Elem){
+					Code.put(Code.add);
+					Code.put(Code.dup);
+					Code.store(((Designator)designatorToProcess).obj);
+				}else {
+					Code.put(Code.add);
+					Code.put(Code.dup_x2);
+					Code.store(((Designator)designatorToProcess).obj);
+				}
+			} else
 			if(assignment.getEqualOp() instanceof SubEq) {
-				Code.put(Code.sub);
-				Code.put(Code.dup);
-				Code.store(((Designator)designatorStack.pop()).obj);
-			}
+				if(((Designator)designatorToProcess).obj.getKind()!= Obj.Elem){
+					Code.put(Code.sub);
+					Code.put(Code.dup);
+					Code.store(((Designator)designatorToProcess).obj);
+				}else {
+					Code.put(Code.sub);
+					Code.put(Code.dup_x2);
+					Code.store(((Designator)designatorToProcess).obj);
+				}
+			} else
 			if(assignment.getEqualOp() instanceof MulEq) {
-				Code.put(Code.mul);
-				Code.put(Code.dup);
-				Code.store(((Designator)designatorStack.pop()).obj);
-			}
+				if(((Designator)designatorToProcess).obj.getKind()!= Obj.Elem){
+					Code.put(Code.mul);
+					Code.put(Code.dup);
+					Code.store(((Designator)designatorToProcess).obj);
+				}else {
+					Code.put(Code.mul);
+					Code.put(Code.dup_x2);
+					Code.store(((Designator)designatorToProcess).obj);
+				}
+			} else
 			if(assignment.getEqualOp() instanceof DivEq) {
-				Code.put(Code.div);
-				Code.put(Code.dup);
-				Code.store(((Designator)designatorStack.pop()).obj);
+				if(((Designator)designatorToProcess).obj.getKind()!= Obj.Elem){
+					Code.put(Code.div);
+					Code.put(Code.dup);
+					Code.store(((Designator)designatorToProcess).obj);
+				}else {
+					Code.put(Code.div);
+					Code.put(Code.dup_x2);
+					Code.store(((Designator)designatorToProcess).obj);
+				}
 			}
 		}
-//
-//		if(assignment.getEqualOp() instanceof EqualNode && designatorStack.size()==0) {
-//			SyntaxNode parent = assignment.getDesignator().getParent();
-//			Code.store(assignment.getDesignator().obj);
-//		} else if(assignment.getEqualOp() instanceof AddEq) {
-//			Code.load(((Designator)assignment.getDesignator()).obj);
-//			Code.put(Code.add);
-//			Code.store(((Designator)assignment.getDesignator()).obj);
-//		}
-//		else if(assignment.getEqualOp() instanceof MulEq) {
-//			Code.load(((Designator)assignment.getDesignator()).obj);
-//			Code.put(Code.mul);
-//			Code.store(((Designator)assignment.getDesignator()).obj);
-//		}
-//		else if(assignment.getEqualOp() instanceof DivEq) {
-//			Code.load(((Designator)assignment.getDesignator()).obj);
-//			Code.put(Code.div);
-//			Code.store(((Designator)assignment.getDesignator()).obj);
-//		}
-//		else if(assignment.getEqualOp() instanceof SubEq) {
-//			Code.load(((Designator)assignment.getDesignator()).obj);
-//			Code.put(Code.sub);
-//			Code.store(((Designator)assignment.getDesignator()).obj);
-//		}
 		if(EqOpp) Code.put(Code.pop);
 		EqOpp=false;
 		designatorToProcess=null;
@@ -177,7 +182,7 @@ public class CodeGenerator extends VisitorAdaptor {
 		 	Code.store(((Designator)designatorToProcess).obj);
 			Code.load(((Designator)designatorToProcess).obj);
 		 } else if(EqExpr.getEqualOp() instanceof AddEq) {
-			if(((Designator)designatorToProcess).obj.getType().getKind()!=Struct.Array){
+			if(((Designator)designatorToProcess).obj.getKind()!= Obj.Elem){
 				Code.put(Code.add);
 				Code.put(Code.dup);
 				Code.store(((Designator)designatorToProcess).obj);
@@ -188,7 +193,7 @@ public class CodeGenerator extends VisitorAdaptor {
 			}
 		 }
 		 else if(EqExpr.getEqualOp() instanceof MulEq) {
-			if(((Designator)designatorToProcess).obj.getType().getKind()!=Struct.Array){
+			if(((Designator)designatorToProcess).obj.getKind()!= Obj.Elem){
 				 Code.put(Code.mul);
 				 Code.put(Code.dup);
 				 Code.store(((Designator)designatorToProcess).obj);
@@ -200,7 +205,7 @@ public class CodeGenerator extends VisitorAdaptor {
 			}
 		 }
 		 else if(EqExpr.getEqualOp() instanceof DivEq) {
-			if(((Designator)designatorToProcess).obj.getType().getKind()!=Struct.Array){
+			if(((Designator)designatorToProcess).obj.getKind()!= Obj.Elem){
 				Code.put(Code.div);
 				Code.put(Code.dup);
 				Code.store(((Designator)designatorToProcess).obj);
@@ -212,7 +217,7 @@ public class CodeGenerator extends VisitorAdaptor {
 			}
 		 }
 		 else if(EqExpr.getEqualOp() instanceof SubEq) {
-			if(((Designator)designatorToProcess).obj.getType().getKind()!=Struct.Array){
+			if(((Designator)designatorToProcess).obj.getKind()!= Obj.Elem){
 				Code.put(Code.sub);
 				Code.put(Code.dup);
 				Code.store(((Designator)designatorToProcess).obj);
