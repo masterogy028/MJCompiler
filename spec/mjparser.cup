@@ -68,8 +68,8 @@ nonterminal MethodDeclList, LParenCondition, VarDecl, ConstDecl, WAss, IncDec, E
 nonterminal FormalParamList, FormalParamDecl, FormPars, ActualPars, ActualParamList, VarType, ConstDeclSpec;
 nonterminal StatementList, Statement, AddOperations, MulOperations, MethVarDeclList;
 
-nonterminal rs.etf.pp1.symboltable.concepts.Obj ExprNeg,Program, ProgName, Designator, MethodDecl, MethodTypeName, MethType, ConstFactor, ConstSingleSpec;
-nonterminal rs.etf.pp1.symboltable.concepts.Obj Type, Term, Expr, Factor, VarDeclList, DesignatorLbrack;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj Program, ProgName, Designator, MethodDecl, MethodTypeName, MethType, ConstFactor, ConstSingleSpec;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj Type, Term, TermNeg, Expr, Factor, VarDeclList, DesignatorLbrack;
 Program ::= (Program) PROG ProgName:p VarDeclList LBRACE MethodDeclList RBRACE
 ;
 
@@ -87,6 +87,7 @@ VarDeclList ::= (VarDeclarations) VarDeclList VarDecl
 VarDecl ::= (VarDecl) VarType VarDeclSpec SEMI
             ;
 VarType ::= (VarTypeNode) Type:varType;
+
 VarDeclSpec ::= (SingleVarNode)VarSingleSpec
                 |
                 (MultiVarNode)VarDeclSpec COMMA VarSingleSpec;
@@ -156,16 +157,16 @@ StatementList ::= (Statements) StatementList Statement
 					|
 				  (NoStmt) /* epsilon */
 				  ;
-Statement ::= (Assignment) Designator:dest EqualOp ExprNeg:e SEMI
+Statement ::= (Assignment) Designator:dest EqualOp Expr:e SEMI
 			  |
 			  (ErrAssignment)  error SEMI
 			  {: parser.log.debug("Uspesan oporavak od greske."); :}
 			  |
-			  (PrintStmt) PRINT LPAREN ExprNeg RPAREN SEMI
+			  (PrintStmt) PRINT LPAREN Expr RPAREN SEMI
 			  |
               (ReadStmt) READ LPAREN Designator RPAREN SEMI
 			  |
-			  (ReturnExpr) RETURN ExprNeg:t SEMI
+			  (ReturnExpr) RETURN Expr:t SEMI
 			  |
 			  (ReturnNoExpr) RETURN SEMI
 			  |
@@ -180,18 +181,20 @@ Statement ::= (Assignment) Designator:dest EqualOp ExprNeg:e SEMI
               (DeclNodeStmt) VarDecl
               ;
 
-ExprNeg ::= (RegularExp) Expr:te
-         |
-         (NegativeExp) MINUS Expr:te
-         ;
-Expr ::= (OppExpr) Term:t AddOperations  Expr:te
+
+Expr ::= (OppExpr) Expr:te  AddOperations  Term:t
 		 |
-		 (EqExpr) Term:t EqualOp Expr:te
+		 (EqExpr) Expr:te  EqualOp Term:t
          |
-         (BoolExpr) Term:t  BoolOp Expr:te
+         (BoolExpr) Expr:te BoolOp Term:t
          |
-		 (TermExpr) Term:t
+		 (TermExpr) TermNeg:t
 		 ;
+
+TermNeg ::= (RegularTerm) Term:te
+         |
+         (NegativeTerm) MINUS Term:te
+         ;
 
 Term ::= (TermMulopNode) Term MulOperations Factor:t | (TermNode) Factor:t
 ;

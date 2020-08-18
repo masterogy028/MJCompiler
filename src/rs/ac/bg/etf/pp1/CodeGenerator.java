@@ -7,7 +7,6 @@ import rs.ac.bg.etf.pp1.ast.*;
 import rs.etf.pp1.mj.runtime.Code;
 import rs.etf.pp1.symboltable.Tab;
 import rs.etf.pp1.symboltable.concepts.Obj;
-import rs.etf.pp1.symboltable.concepts.Struct;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -22,6 +21,7 @@ public class CodeGenerator extends VisitorAdaptor {
 	private int paramCnt;
 	private boolean EqOpp = false;
 	private int mainPc;
+	private Stack<Integer> inIndex=new Stack<>();
 	private SyntaxNode designatorToProcess = null;
 	public int getMainPc() {
 		return mainPc;
@@ -81,7 +81,8 @@ public class CodeGenerator extends VisitorAdaptor {
 		Obj con = Tab.insert(Obj.Con, "$", cn.obj.getType());
 		con.setLevel(0);
 		con.setAdr(cn.getValue());
-		//if(EqOpp)depth++;
+		if(inIndex.size()==0)
+			depth++;
 		Code.load(cn.obj);
 	}
 	@Override
@@ -110,7 +111,8 @@ public class CodeGenerator extends VisitorAdaptor {
 		if (!EqOpp)
 			Code.store(assignment.getDesignator().obj);
 		else {
-			if(depth==designatorStack.size())designatorStack.pop();
+			if(depth==designatorStack.size())
+				designatorStack.pop();
 			designatorToProcess=designatorStack.pop();
 			if(assignment.getEqualOp() instanceof EqualNode)
 				Code.store(((Designator)designatorToProcess).obj); else
@@ -170,9 +172,6 @@ public class CodeGenerator extends VisitorAdaptor {
 
 
 
-	public void visit(Expr expr) {
-		if(expr instanceof EqExpr) EqOpp=true;
-	}
 
 	@Override
 	public void visit(EqExpr EqExpr) {
@@ -250,24 +249,21 @@ public class CodeGenerator extends VisitorAdaptor {
 		SyntaxNode parent = designator.getParent();
 		checkIfEqOpp(designator, parent);
 		if (parent.getClass()!=Assignment.class && parent.getClass()!= FuncCall.class &&
-			parent.getClass()!=ProcCall.class
+			parent.getClass()!=ProcCall.class && parent.getClass()!= ReadStmt.class
 			&& !EqOpp)
 			Code.load(designator.obj);
 		else if(EqOpp) {
 			depth++;
 			Code.load(designator.obj);
 			designatorStack.add(designator);
-
 			//designatorToProcess = designator;
 		}
 
 	}
 
 	private void checkIfEqOpp(Designator designator, SyntaxNode parent) {
-		if((parent.getParent().getParent() instanceof EqExpr) || (parent.getParent().getParent().getParent() instanceof EqExpr) ||
-				(parent.getParent().getParent().getParent().getParent() instanceof EqExpr) || (parent.getParent().getParent().getParent().getParent().getParent() instanceof EqExpr)
-		|| (parent instanceof Assignment && ((Assignment) parent).getEqualOp().getClass()!=EqualNode.class)) EqOpp=true;
-
+		if((parent instanceof Assignment && !(((Assignment) parent).getEqualOp() instanceof EqualNode)))
+			EqOpp=true;
 	}
 
 	@Override
@@ -276,22 +272,36 @@ public class CodeGenerator extends VisitorAdaptor {
 		checkIfEqOpp(designator, parent);
 
 		if (parent.getClass()!=Assignment.class&&parent.getClass()!=IncrementOnlyNode.class&&
-				parent.getClass()!= DecrementOnlyNode.class && parent.getClass()!=ProcCall.class&& !EqOpp)
+				parent.getClass()!= DecrementOnlyNode.class && parent.getClass()!=ProcCall.class && parent.getClass()!= ReadStmt.class && !EqOpp)
 			Code.load(designator.obj);
 		else if(EqOpp) {
 			depth++;
 			if(!(parent.getParent().getParent() instanceof TermExpr)&&!(parent.getParent().getParent().getParent() instanceof TermExpr))
 			Code.put(Code.dup2);
 			Code.load(designator.obj);
+			try{
+				if(EqOpp)
+					inIndex.pop();
+			}
+			catch (Exception e) {
+				int i;
+				i=1;
+				i++;
+				int y=i;
+			}
+
+
+			if(inIndex.size()==0)
 			designatorStack.add(designator);
 		}
 	}
 	@Override
 	public void visit(DesignatorLbrackNode designator) {
 		SyntaxNode parent = designator.getParent();
-		checkIfEqOpp((DesignatorArrayMemberNode)designator.getParent(), parent);
+		checkIfEqOpp((Designator) designator.getParent(), parent);
 		Code.load(designator.obj);
-
+		if(EqOpp)
+			inIndex.add(1);
 		//if(EqOpp) designatorToProcess = designator;
 	}
 	@Override
@@ -303,7 +313,7 @@ public class CodeGenerator extends VisitorAdaptor {
 	}
 
 	public void visit(PrintStmt printStmt){
-		if(printStmt.getExprNeg().obj.getType() == Tab.intType){
+		if(printStmt.getExpr().obj.getType() == Tab.intType){
 			Code.loadConst(5);
 			Code.put(Code.print);
 		}else{
@@ -313,7 +323,7 @@ public class CodeGenerator extends VisitorAdaptor {
 	}
 
 	@Override
-	public void visit(NegativeExp ExprNeg) {
+	public void visit(NegativeTerm ExprNeg) {
 		Code.put(Code.neg);
 	}
 
@@ -337,6 +347,21 @@ public class CodeGenerator extends VisitorAdaptor {
 			Code.put(Code.rem);
 
 	}
+
+    @Override
+    public void visit(ReadStmt ReadStmt) {
+        if (ReadStmt.getDesignator().obj.getType() == Tab.intType || ReadStmt.getDesignator().obj.getType() == ExtraTable.boolType)
+        {
+            Code.put(Code.read);
+        }
+        else
+        {
+            Code.put(Code.bread);
+        }
+
+        Code.store(ReadStmt.getDesignator().obj);
+    }
+
 
 	@Override
 	public void visit(IncrementOnlyNode node)

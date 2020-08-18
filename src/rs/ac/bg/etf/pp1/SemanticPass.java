@@ -158,13 +158,13 @@ public class SemanticPass extends VisitorAdaptor {
 		{report_error("assignment je null", null);return;}
 		if(assignment.getDesignator() == null)
 		{report_error("designator je null", null);return;}
-		if(assignment.getExprNeg() == null)
+		if(assignment.getExpr() == null)
 		{report_error("Expr je null", null);return;}
 		if(assignment.getDesignator().obj == null)
 		{report_error("obj je null", null);return;}
-		if(assignment.getExprNeg().obj == null)
+		if(assignment.getExpr().obj == null)
 		{report_error("obj je null", null);return;}
-		if(assignment.getExprNeg().obj.getType() == null)
+		if(assignment.getExpr().obj.getType() == null)
 		{report_error("type je null", null);return;}
 		if(assignment.getDesignator().obj.getType() == null)
 		{report_error("type je null", null);return;}
@@ -174,18 +174,18 @@ public class SemanticPass extends VisitorAdaptor {
 			return;
 		}
 
-		if((assignment.getDesignator().obj.getType().getKind()!= Struct.Array) && (assignment.getExprNeg().obj.getType().getKind()!=Struct.Array)) {
-			if (!assignment.getExprNeg().obj.getType().assignableTo(assignment.getDesignator().obj.getType()))
+		if((assignment.getDesignator().obj.getType().getKind()!= Struct.Array) && (assignment.getExpr().obj.getType().getKind()!=Struct.Array)) {
+			if (!assignment.getExpr().obj.getType().assignableTo(assignment.getDesignator().obj.getType()))
 				report_error("Greska na liniji " + assignment.getLine() + " : " + " nekompatibilni tipovi u dodeli vrednosti ", null);
-		} else if(assignment.getExprNeg().obj.getType().getKind() != Struct.Array && assignment.getDesignator().obj.getType().getKind() == Struct.Array ){
+		} else if(assignment.getExpr().obj.getType().getKind() != Struct.Array && assignment.getDesignator().obj.getType().getKind() == Struct.Array ){
 			//report_info(assignment.getExpr().obj.getType().getKind()+" = " +assignment.getDesignator().obj.getType().getKind(), null);
-			if (!assignment.getExprNeg().obj.getType().assignableTo(assignment.getDesignator().obj.getType().getElemType()))
+			if (!assignment.getExpr().obj.getType().assignableTo(assignment.getDesignator().obj.getType().getElemType()))
 				report_error("Greska na liniji " + assignment.getLine() + " : " + " nekompatibilni tipovi u dodeli vrednosti ", null);
-		} else if (assignment.getExprNeg().obj.getType().getKind() == Struct.Array && assignment.getDesignator().obj.getType().getKind() != Struct.Array) {
-			if (!assignment.getExprNeg().obj.getType().getElemType().assignableTo(assignment.getDesignator().obj.getType()))
+		} else if (assignment.getExpr().obj.getType().getKind() == Struct.Array && assignment.getDesignator().obj.getType().getKind() != Struct.Array) {
+			if (!assignment.getExpr().obj.getType().getElemType().assignableTo(assignment.getDesignator().obj.getType()))
 				report_error("Greska na liniji " + assignment.getLine() + " : " + " nekompatibilni tipovi u dodeli vrednosti ", null);
-		} else if (assignment.getExprNeg().obj.getType().getKind() == Struct.Array && assignment.getDesignator().obj.getType().getKind() == Struct.Array) {
-			if (!assignment.getExprNeg().obj.getType().getElemType().assignableTo(assignment.getDesignator().obj.getType().getElemType()))
+		} else if (assignment.getExpr().obj.getType().getKind() == Struct.Array && assignment.getDesignator().obj.getType().getKind() == Struct.Array) {
+			if (!assignment.getExpr().obj.getType().getElemType().assignableTo(assignment.getDesignator().obj.getType().getElemType()))
 				report_error("Greska na liniji " + assignment.getLine() + " : " + " nekompatibilni tipovi u dodeli vrednosti ", null);
 		}
 	}
@@ -203,7 +203,7 @@ public class SemanticPass extends VisitorAdaptor {
 			report_error("Greska na liniji " + returnExpr.getLine() + " : " + "funkcija je tipa void" + currentMethod.getName(), null);
 			return;
 		}
-		if (!currMethType.compatibleWith(returnExpr.getExprNeg().obj.getType())) {
+		if (!currMethType.compatibleWith(returnExpr.getExpr().obj.getType())) {
 			report_error("Greska na liniji " + returnExpr.getLine() + " : " + "tip izraza u return naredbi ne slaze se sa tipom povratne vrednosti funkcije " + currentMethod.getName(), null);
 		}			  	     	
 	}
@@ -230,14 +230,14 @@ public class SemanticPass extends VisitorAdaptor {
 			//RESULT = Tab.noType;
 		}     	
 	}
-	public void visit(RegularExp regExp) {
-		regExp.obj=regExp.getExpr().obj;
+	public void visit(RegularTerm regExp) {
+		regExp.obj=regExp.getTerm().obj;
 	}
-	public void visit(NegativeExp regExp) {
-		if(regExp.getExpr().obj.getType()!=null && regExp.getExpr().obj.getType().getKind() != Struct.Int ) {
+	public void visit(NegativeTerm regExp) {
+		if(regExp.getTerm().obj.getType()!=null && regExp.getTerm().obj.getType().getKind() != Struct.Int ) {
 			report_error("Greska na liniji "+ regExp.getLine()+" : nije moguca negacija tipa koji nije INT!", null);
 		}
-		regExp.obj=regExp.getExpr().obj;
+		regExp.obj=regExp.getTerm().obj;
 	}
 	public void visit(OppExpr oppExpr) {
 		Obj te = oppExpr.getExpr().obj;
@@ -253,9 +253,12 @@ public class SemanticPass extends VisitorAdaptor {
 	public void visit(EqExpr oppExpr) {
 		Obj te = oppExpr.getExpr().obj;
 		Obj t = oppExpr.getTerm().obj;
-		if (te.getType().compatibleWith(t.getType()) && te.getType() == Tab.intType)
+		if (te.getType().compatibleWith(t.getType()) && te.getType() == Tab.intType && te.getKind()!=Obj.Con)//??????????
 			oppExpr.obj = te;
-		else {
+		else if(te.getKind()==Obj.Con) {
+			report_error("Greska na liniji "+ oppExpr.getLine()+" : nemoguca dodela vrednosti konstanti.", null);
+			oppExpr.obj = Tab.noObj;
+		} else {
 			report_error("Greska na liniji "+ oppExpr.getLine()+" : nekompatibilni tipovi u izrazu za dodelu i operaciju.", null);
 			oppExpr.obj = Tab.noObj;
 		}
@@ -272,7 +275,7 @@ public class SemanticPass extends VisitorAdaptor {
 	}
 
 	public void visit(TermExpr termExpr) {
-		termExpr.obj = termExpr.getTerm().obj;
+		termExpr.obj = termExpr.getTermNeg().obj;
 	}
 
 	public void visit(TermNode term) {
@@ -326,7 +329,7 @@ public class SemanticPass extends VisitorAdaptor {
 		}
 //		if (obj.getKind() == Obj.Con && !(designator.getParent() instanceof Term)) {
 //			report_error("Greska na liniji " + designator.getLine()+ " : ime "+designator.getName()+" nije moguca operacija promena vrednosti konstante! ", null);
-//		}
+//		}	
 		designator.obj = obj;
 		int a=1; int b=1; int c=1;
 

@@ -66,7 +66,7 @@ import java_cup.runtime.Symbol;
 
 
 // # CONST ////////////////////////////////////////////////////////////////////////////////////////
-(-[0-9]+|[0-9]+)				{ return new_symbol(sym.INT, new Integer(yytext())); }
+([0-9]+)				{ return new_symbol(sym.INT, new Integer(yytext())); }
 "'"[ -~]"'"						{ return new_symbol(sym.CHAR, yytext().charAt(1)); }
 ("false"|"true")				{ return new_symbol(sym.BOOL, new Boolean(yytext())); }
 

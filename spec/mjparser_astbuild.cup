@@ -89,8 +89,8 @@ nonterminal AddOperations AddOperations;
 nonterminal MulOperations MulOperations;
 nonterminal MethVarDeclList MethVarDeclList;
 
-nonterminal rs.etf.pp1.symboltable.concepts.Obj ExprNeg,Program, ProgName, Designator, MethodDecl, MethodTypeName, MethType, ConstFactor, ConstSingleSpec;
-nonterminal rs.etf.pp1.symboltable.concepts.Obj Type, Term, Expr, Factor, VarDeclList, DesignatorLbrack;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj Program, ProgName, Designator, MethodDecl, MethodTypeName, MethType, ConstFactor, ConstSingleSpec;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj Type, Term, TermNeg, Expr, Factor, VarDeclList, DesignatorLbrack;
 Program ::= (Program) PROG ProgName:p VarDeclList:V1 LBRACE MethodDeclList:M2 RBRACE {: RESULT=new Program(p, V1, M2); RESULT.setLine(pleft); :}
 ;
 
@@ -108,6 +108,7 @@ VarDeclList ::= (VarDeclarations) VarDeclList:V1 VarDecl:V2 {: RESULT=new VarDec
 VarDecl ::= (VarDecl) VarType:V1 VarDeclSpec:V2 SEMI {: RESULT=new VarDecl(V1, V2); RESULT.setLine(V1left); :}
             ;
 VarType ::= (VarTypeNode) Type:varType {: RESULT=new VarTypeNode(varType); RESULT.setLine(varTypeleft); :};
+
 VarDeclSpec ::= (SingleVarNode)VarSingleSpec:V1 {: RESULT=new SingleVarNode(V1); RESULT.setLine(V1left); :}
                 |
                 (MultiVarNode)VarDeclSpec:V1 COMMA VarSingleSpec:V2 {: RESULT=new MultiVarNode(V1, V2); RESULT.setLine(V1left); :};
@@ -177,16 +178,16 @@ StatementList ::= (Statements) StatementList:S1 Statement:S2 {: RESULT=new State
 					|
 				  (NoStmt) {: RESULT=new NoStmt(); :} /* epsilon */
 				  ;
-Statement ::= (Assignment) Designator:dest EqualOp:E1 ExprNeg:e SEMI {: RESULT=new Assignment(dest, E1, e); RESULT.setLine(destleft); :}
+Statement ::= (Assignment) Designator:dest EqualOp:E1 Expr:e SEMI {: RESULT=new Assignment(dest, E1, e); RESULT.setLine(destleft); :}
 			  |
 			  (ErrAssignment)  error SEMI
 			  {: parser.log.debug("Uspesan oporavak od greske."); :} {: RESULT=new ErrAssignment(); :}
 			  |
-			  (PrintStmt) PRINT LPAREN ExprNeg:E1 RPAREN SEMI {: RESULT=new PrintStmt(E1); RESULT.setLine(E1left); :}
+			  (PrintStmt) PRINT LPAREN Expr:E1 RPAREN SEMI {: RESULT=new PrintStmt(E1); RESULT.setLine(E1left); :}
 			  |
               (ReadStmt) READ LPAREN Designator:D1 RPAREN SEMI {: RESULT=new ReadStmt(D1); RESULT.setLine(D1left); :}
 			  |
-			  (ReturnExpr) RETURN ExprNeg:t SEMI {: RESULT=new ReturnExpr(t); RESULT.setLine(tleft); :}
+			  (ReturnExpr) RETURN Expr:t SEMI {: RESULT=new ReturnExpr(t); RESULT.setLine(tleft); :}
 			  |
 			  (ReturnNoExpr) RETURN SEMI {: RESULT=new ReturnNoExpr(); :}
 			  |
@@ -201,18 +202,20 @@ Statement ::= (Assignment) Designator:dest EqualOp:E1 ExprNeg:e SEMI {: RESULT=n
               (DeclNodeStmt) VarDecl:V1 {: RESULT=new DeclNodeStmt(V1); RESULT.setLine(V1left); :}
               ;
 
-ExprNeg ::= (RegularExp) Expr:te {: RESULT=new RegularExp(te); RESULT.setLine(teleft); :}
-         |
-         (NegativeExp) MINUS Expr:te {: RESULT=new NegativeExp(te); RESULT.setLine(teleft); :}
-         ;
-Expr ::= (OppExpr) Term:t AddOperations:A1  Expr:te {: RESULT=new OppExpr(t, A1, te); RESULT.setLine(tleft); :}
+
+Expr ::= (OppExpr) Expr:te  AddOperations:A1  Term:t {: RESULT=new OppExpr(te, A1, t); RESULT.setLine(teleft); :}
 		 |
-		 (EqExpr) Term:t EqualOp:E1 Expr:te {: RESULT=new EqExpr(t, E1, te); RESULT.setLine(tleft); :}
+		 (EqExpr) Expr:te  EqualOp:E1 Term:t {: RESULT=new EqExpr(te, E1, t); RESULT.setLine(teleft); :}
          |
-         (BoolExpr) Term:t  BoolOp:B1 Expr:te {: RESULT=new BoolExpr(t, B1, te); RESULT.setLine(tleft); :}
+         (BoolExpr) Expr:te BoolOp:B1 Term:t {: RESULT=new BoolExpr(te, B1, t); RESULT.setLine(teleft); :}
          |
-		 (TermExpr) Term:t {: RESULT=new TermExpr(t); RESULT.setLine(tleft); :}
+		 (TermExpr) TermNeg:t {: RESULT=new TermExpr(t); RESULT.setLine(tleft); :}
 		 ;
+
+TermNeg ::= (RegularTerm) Term:te {: RESULT=new RegularTerm(te); RESULT.setLine(teleft); :}
+         |
+         (NegativeTerm) MINUS Term:te {: RESULT=new NegativeTerm(te); RESULT.setLine(teleft); :}
+         ;
 
 Term ::= (TermMulopNode) Term:T1 MulOperations:M2 Factor:t {: RESULT=new TermMulopNode(T1, M2, t); RESULT.setLine(T1left); :} | (TermNode) Factor:t {: RESULT=new TermNode(t); RESULT.setLine(tleft); :}
 ;
