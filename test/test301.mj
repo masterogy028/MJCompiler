@@ -8,18 +8,11 @@ program test301
 
 	int niz[];
 	char nizch[];
-
+	
 {
-	void main()
+	void main()	
 		int bodovi;
 	{
-		bodovi = 0;
-		bodovi++;
-		bodovi = bodovi + jedan;
-		bodovi = bodovi * pet;
-		bodovi--;
-		print(bodovi);
-
 
 		niz = new int[3];
 		niz[nula] = jedan;
@@ -29,7 +22,7 @@ program test301
 		print(bodovi);
 		print(niz[2]);
 
-		//read(bodovi);
+		read(bodovi);
 		niz[2] += bodovi *= 2;
 		niz[2]++;
 		print(niz[2]);

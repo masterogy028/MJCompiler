@@ -9,7 +9,7 @@ import rs.etf.pp1.symboltable.concepts.Obj;
 import rs.etf.pp1.symboltable.concepts.Struct;
 
 public class SemanticPass extends VisitorAdaptor {
-
+	boolean designatorOnEnd = false;
 	boolean errorDetected = false;
 	int printCallCount = 0;
 	Obj currentMethod = null;
@@ -253,9 +253,9 @@ public class SemanticPass extends VisitorAdaptor {
 	public void visit(EqExpr oppExpr) {
 		Obj te = oppExpr.getExpr().obj;
 		Obj t = oppExpr.getTerm().obj;
-		if (te.getType().compatibleWith(t.getType()) && te.getType() == Tab.intType && te.getKind()!=Obj.Con)//??????????
+		if (te.getType().compatibleWith(t.getType()) && te.getType() == Tab.intType && t.getKind()!=Obj.Con)//??????????
 			oppExpr.obj = te;
-		else if(te.getKind()==Obj.Con) {
+		else if(t.getKind()==Obj.Con) {
 			report_error("Greska na liniji "+ oppExpr.getLine()+" : nemoguca dodela vrednosti konstanti.", null);
 			oppExpr.obj = Tab.noObj;
 		} else {

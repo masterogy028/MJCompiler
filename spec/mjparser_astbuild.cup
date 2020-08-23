@@ -203,11 +203,11 @@ Statement ::= (Assignment) Designator:dest EqualOp:E1 Expr:e SEMI {: RESULT=new 
               ;
 
 
-Expr ::= (OppExpr) Expr:te  AddOperations:A1  Term:t {: RESULT=new OppExpr(te, A1, t); RESULT.setLine(teleft); :}
+Expr ::= (OppExpr)  Term:t AddOperations:A1  Expr:te {: RESULT=new OppExpr(t, A1, te); RESULT.setLine(tleft); :}
 		 |
-		 (EqExpr) Expr:te  EqualOp:E1 Term:t {: RESULT=new EqExpr(te, E1, t); RESULT.setLine(teleft); :}
+		 (EqExpr)  Term:t EqualOp:E1  Expr:te {: RESULT=new EqExpr(t, E1, te); RESULT.setLine(tleft); :}
          |
-         (BoolExpr) Expr:te BoolOp:B1 Term:t {: RESULT=new BoolExpr(te, B1, t); RESULT.setLine(teleft); :}
+         (BoolExpr) Term:t BoolOp:B1  Expr:te {: RESULT=new BoolExpr(t, B1, te); RESULT.setLine(tleft); :}
          |
 		 (TermExpr) TermNeg:t {: RESULT=new TermExpr(t); RESULT.setLine(tleft); :}
 		 ;

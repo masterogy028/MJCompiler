@@ -14,6 +14,7 @@ import java.util.Stack;
 
 public class CodeGenerator extends VisitorAdaptor {
 
+	private boolean designatorOnEnd = false;
 	private int varCount;
 	private int depth=0;
 	private Stack<SyntaxNode> designatorStack = new Stack<>();
@@ -162,6 +163,7 @@ public class CodeGenerator extends VisitorAdaptor {
 				}
 			}
 		}
+		designatorOnEnd = false;
 		if(EqOpp) Code.put(Code.pop);
 		EqOpp=false;
 		designatorToProcess=null;
@@ -255,7 +257,10 @@ public class CodeGenerator extends VisitorAdaptor {
 		else if(EqOpp) {
 			depth++;
 			Code.load(designator.obj);
-			designatorStack.add(designator);
+			if(!(designator.getParent().getParent().getParent() instanceof  OppExpr)&&!(designator.getParent().getParent() instanceof TermMulopNode)) {
+				designatorStack.add(designator);
+			}
+
 			//designatorToProcess = designator;
 		}
 
@@ -276,7 +281,7 @@ public class CodeGenerator extends VisitorAdaptor {
 			Code.load(designator.obj);
 		else if(EqOpp) {
 			depth++;
-			if(!(parent.getParent().getParent() instanceof TermExpr)&&!(parent.getParent().getParent().getParent() instanceof TermExpr))
+			if((parent.getParent().getParent() instanceof EqExpr)||(parent.getParent().getParent().getParent() instanceof EqExpr)||parent instanceof Assignment)
 			Code.put(Code.dup2);
 			Code.load(designator.obj);
 			try{
@@ -291,7 +296,7 @@ public class CodeGenerator extends VisitorAdaptor {
 			}
 
 
-			if(inIndex.size()==0)
+			if(inIndex.size()==0 && !(designator.getParent().getParent().getParent() instanceof  OppExpr)&&!(designator.getParent().getParent() instanceof TermMulopNode))
 			designatorStack.add(designator);
 		}
 	}

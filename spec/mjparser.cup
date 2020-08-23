@@ -182,11 +182,11 @@ Statement ::= (Assignment) Designator:dest EqualOp Expr:e SEMI
               ;
 
 
-Expr ::= (OppExpr) Expr:te  AddOperations  Term:t
+Expr ::= (OppExpr)  Term:t AddOperations  Expr:te
 		 |
-		 (EqExpr) Expr:te  EqualOp Term:t
+		 (EqExpr)  Term:t EqualOp  Expr:te
          |
-         (BoolExpr) Expr:te BoolOp Term:t
+         (BoolExpr) Term:t BoolOp  Expr:te
          |
 		 (TermExpr) TermNeg:t
 		 ;
